@@ -13,19 +13,30 @@ async function railnow(path, params = {}) {
   const url = new URL(BASE + path);
   for (const [key, value] of Object.entries({ lang: 'en', ...params })) url.searchParams.set(key, value);
   const res = await fetch(url, { headers: { 'X-API-Key': API_KEY } });
+  if (res.ok) return res.json();
   if (res.status === 429) {
     throw new Error(`Rate limit exceeded. Retry after ${res.headers.get('retry-after')} seconds.`);
   }
-  if (!res.ok) throw new Error(`${res.status} ${(await res.json()).error}`);
-  return res.json();
+  // Authentication errors carry `error`; validation errors (400, 404) explain the cause in `message`.
+  const body = await res.json().catch(() => ({}));
+  throw new Error(`${res.status} ${body.message ?? body.error ?? res.statusText}`);
 }
 
-// Find a station, then show the trains approaching it.
-const { stations } = await railnow('/station/search', { q: '강남', lineId: '1002' });
-const station = stations[0];
-console.log(`${station.name} (${station.subwayName}), station ID ${station.stationId}`);
+async function main() {
+  // Find a station, then show the trains approaching it.
+  const { stations } = await railnow('/station/search', { q: '강남', lineId: '1002' });
+  if (stations.length === 0) throw new Error('No station found');
+  const station = stations[0];
+  console.log(`${station.name} (${station.subwayName}), station ID ${station.stationId}`);
 
-const board = await railnow(`/station/${station.stationId}/board`);
-for (const train of board.trains) {
-  console.log(`  ${train.direction}  train ${train.trainNo}  ${train.stopsAway} stops away`);
+  const board = await railnow(`/station/${station.stationId}/board`);
+  for (const train of board.trains) {
+    const eta = train.arrivalEtaSeconds == null ? '-' : `${Math.round(train.arrivalEtaSeconds / 60)} min`;
+    console.log(`  ${train.direction}  train ${train.trainNo}  ${train.stopsAway} stops away  ETA ${eta}`);
+  }
 }
+
+main().catch((error) => {
+  console.error(error.message);
+  process.exit(1);
+});

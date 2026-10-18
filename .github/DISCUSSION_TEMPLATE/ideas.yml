@@ -1,0 +1,16 @@
+title: "[Idea] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you building? / 만들고 있는 것
+      description: What you want to do and what is missing today. 하려는 일과 지금 부족한 점.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Idea / 아이디어
+      description: The endpoint, field, line or behavior you would like. 원하는 엔드포인트, 필드, 노선, 동작.
+    validations:
+      required: true

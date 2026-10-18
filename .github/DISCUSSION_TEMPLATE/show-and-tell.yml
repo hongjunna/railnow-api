@@ -1,0 +1,14 @@
+title: "[Show] "
+body:
+  - type: input
+    id: link
+    attributes:
+      label: Link / 링크
+      description: Website, app store page or repository. 웹사이트, 앱 스토어, 저장소.
+  - type: textarea
+    id: about
+    attributes:
+      label: About your project / 프로젝트 소개
+      description: What it does, which endpoints it uses, screenshots. 기능, 사용한 엔드포인트, 스크린샷.
+    validations:
+      required: true

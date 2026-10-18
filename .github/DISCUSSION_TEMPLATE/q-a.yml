@@ -1,0 +1,22 @@
+title: "[Q&A] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask anything about using the RailNow API. Report bugs in [Issues](https://github.com/hongjunna/railnow-api/issues/new/choose) instead.
+        API 사용법을 질문해 주세요. 버그는 [Issues](https://github.com/hongjunna/railnow-api/issues/new/choose)에 남겨 주세요.
+
+        **Never paste your API key.** API 키를 올리지 마세요.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question / 질문
+      description: What are you trying to do? 무엇을 하려고 하나요?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried / 시도한 내용
+      description: Request (without the API key), response and code. 요청(키 제외), 응답, 코드.
+      render: shell

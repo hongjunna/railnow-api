@@ -15,22 +15,35 @@
 <p align="center">
   <a href="https://railnow.runvia.app/api/docs/en"><img alt="API docs" src="https://img.shields.io/badge/docs-Swagger-006E51"></a>
   <a href="openapi/openapi.en.json"><img alt="OpenAPI 3.0.3" src="https://img.shields.io/badge/OpenAPI-3.0.3-6BA539"></a>
-  <img alt="API version" src="https://img.shields.io/badge/API-v2.2.0-006E51">
+  <a href="https://railnow.runvia.app/api/docs/en/json"><img alt="API version" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Frailnow.runvia.app%2Fapi%2Fdocs%2Fen%2Fjson&query=%24.info.version&prefix=v&label=API&color=006E51"></a>
   <a href="https://railnow.runvia.app/developer?lang=en"><img alt="Free API key" src="https://img.shields.io/badge/API%20key-free-C9F27B"></a>
 </p>
 
 <p align="center">
   <a href="README.ko.md">한국어</a> ·
-  <a href="https://railnow.runvia.app/en">Web app</a> ·
-  <a href="https://railnow.runvia.app/developer?lang=en">Developer Center</a> ·
-  <a href="https://railnow.runvia.app/api/docs/en">API Reference</a>
+  <a href="https://railnow.runvia.app">Website</a> ·
+  <a href="https://railnow.runvia.app/developer?lang=en">Developer Portal</a> ·
+  <a href="https://railnow.runvia.app/api/docs/en">API Docs</a> ·
+  <a href="https://github.com/hongjunna/railnow-api/discussions">Discussions</a>
 </p>
 
 ---
 
 RailNow tracks every train on the Seoul Metropolitan Subway. It collects real-time arrival feeds every few minutes and calibrates them against official timetables, so you get each train's current position, next station, delay in seconds and destination. You can also get station arrival boards, timetables, station-to-station distances and measured travel time statistics.
 
-This repository holds the public documentation, the OpenAPI spec and code examples. Use the issue tracker to report bugs or request features.
+This repository holds the public documentation, the OpenAPI spec and code examples. The API itself is not open source.
+
+## Links
+
+| | |
+|---|---|
+| Official website | https://railnow.runvia.app |
+| API documentation | https://railnow.runvia.app/api/docs (Korean) · https://railnow.runvia.app/api/docs/en (English) |
+| Developer portal (API keys) | https://railnow.runvia.app/developer |
+| RapidAPI | https://rapidapi.com/hongjunna/api/railnow |
+| Postman documentation | https://documenter.getpostman.com/view/59032951/2sBYHSxfc7 |
+| OpenAPI spec | [`openapi/openapi.en.json`](openapi/openapi.en.json) · https://railnow.runvia.app/api/docs/en/json |
+| Discussions | https://github.com/hongjunna/railnow-api/discussions |
 
 ## Features
 
@@ -44,7 +57,14 @@ This repository holds the public documentation, the OpenAPI spec and code exampl
 
 ## Quick start
 
-**1. Get a free API key.** Sign in with Google at the [Developer Center](https://railnow.runvia.app/developer?lang=en) and issue a key (`jl_...`).
+**1. Get a free API key.**
+
+1. Open the [Developer Portal](https://railnow.runvia.app/developer?lang=en) and sign in with Google.
+2. Click **Create API key** and agree to the terms of use.
+3. Enter a key name, purpose and contact email. Leave **Allowed domains** empty unless you call the API from a browser.
+4. Copy the key (`jl_...`). It is shown only once, so store it somewhere safe.
+
+Keep your key out of source control. Load it from an environment variable or a secret store, and never put it in a public repository or in client-side code that ships to users.
 
 **2. Make a request.**
 
@@ -60,13 +80,15 @@ curl -H "X-API-Key: $RAILNOW_API_KEY" \
   "https://railnow.runvia.app/api/v1/train/lines/1002/trains?lang=en"
 ```
 
+Each request should return JSON. A `401` means the key is missing or mistyped.
+
 **3. Show the attribution logo.** Every screen that displays RailNow data must show our logo. See [Attribution](#attribution).
 
 More examples are in [`examples/`](examples): [curl](examples/curl/quickstart.sh), [JavaScript](examples/javascript/quickstart.mjs) and [Python](examples/python/quickstart.py).
 
 ## Endpoints
 
-Base URL: `https://railnow.runvia.app`. Every endpoint is `GET` and requires the `X-API-Key` header.
+Base URL: `https://railnow.runvia.app`. Every endpoint below is `GET` and requires the `X-API-Key` header.
 
 ### Train
 
@@ -154,7 +176,11 @@ Call `/api/v1/train/lines` for the current list of lines with real-time tracking
 | `403` | `{"error":"Domain is not allowed for this API key"}` | The request origin is not an approved domain. |
 | `429` | `{"error":"..."}` | Rate limit exceeded. Wait for the seconds in the `Retry-After` header. |
 
-RailNow is also listed on the RapidAPI marketplace. If you subscribe there, link your RapidAPI account in the Developer Center to see usage and logs.
+Validation errors (`400`, `404`) return `{"statusCode", "error", "message"}`, where `message` explains the cause in Korean.
+
+If you get `403` with the plain-text body `error code: 1010`, our CDN rejected your client's User-Agent. Python's built-in `urllib` is blocked this way. Send your own `User-Agent` header, as the [Python example](examples/python/quickstart.py) does.
+
+RailNow is also on [RapidAPI](https://rapidapi.com/hongjunna/api/railnow), where you can subscribe with your RapidAPI account. If you do, link the RapidAPI account in the Developer Portal to see usage and logs there.
 
 ## Attribution
 
@@ -181,7 +207,7 @@ Square icon: [SVG](https://railnow.runvia.app/brand/railnow-icon.svg) · [PNG 51
 
 ## OpenAPI spec
 
-[`openapi/openapi.en.json`](openapi/openapi.en.json) is the English OpenAPI 3.0.3 spec. Use it to generate a client with [OpenAPI Generator](https://openapi-generator.tech) or to import the API into Postman or Insomnia. The live spec is always at https://railnow.runvia.app/api/docs/en/json.
+[`openapi/openapi.en.json`](openapi/openapi.en.json) is the English OpenAPI 3.0.3 spec. Use it to generate a client with [OpenAPI Generator](https://openapi-generator.tech) or to import the API into Postman or Insomnia. The live spec is always at https://railnow.runvia.app/api/docs/en/json. A [GitHub Actions workflow](.github/workflows/openapi-sync.yml) checks it every day and opens a pull request when it changes.
 
 ```bash
 npx @openapitools/openapi-generator-cli generate \
@@ -196,8 +222,17 @@ Positions between real-time updates are estimates. Source data can be delayed or
 
 ## Support
 
-- **Bugs and feature requests:** [open an issue](https://github.com/hongjunna/railnow-api/issues/new/choose)
-- **Outages and other questions:** [junlab0801@gmail.com](mailto:junlab0801@gmail.com)
-- **Terms:** [API terms of use and privacy policy](https://healthy-sail-1cd.notion.site/API-3e2ee71053db80d28500db98f8dd0532?source=copy_link)
+| Where | Use it for |
+|---|---|
+| [Issues](https://github.com/hongjunna/railnow-api/issues/new/choose) | Bugs: wrong data, errors, unexpected responses, documentation mistakes |
+| [Discussions](https://github.com/hongjunna/railnow-api/discussions) | Questions about using the API (Q&A), feature ideas (Ideas), projects built with RailNow (Show and Tell), announcements of API updates |
+| [junlab0801@gmail.com](mailto:junlab0801@gmail.com) | Outages, questions about your API key or account, anything private |
 
-The code examples in this repository are under the [MIT License](LICENSE). Use of the API and its data is governed by the terms of use above.
+Never post your API key in an issue or discussion.
+
+## License and terms
+
+- **Documentation and code examples in this repository** are licensed under the [MIT License](LICENSE). The license covers nothing else; see [NOTICE](NOTICE.md). You may copy the examples into your own projects.
+- **The RailNow API service and the data it provides** are not covered by the MIT License. They are governed by the [API terms of use and privacy policy](https://healthy-sail-1cd.notion.site/API-3e2ee71053db80d28500db98f8dd0532?source=copy_link), which you accept when you issue an API key.
+- **The RailNow name, logos and brand assets**, including the files in [`assets/`](assets), are not covered by the MIT License. You may use them only to credit RailNow as the data provider, following the [attribution rules](#attribution). Do not use them in a way that suggests RailNow endorses or operates your service.
+- The OpenAPI spec in [`openapi/`](openapi) describes the API and is published so that you can generate clients. Using the API it describes is still subject to the terms of use.

@@ -1,11 +1,14 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Questions about using the API / 사용법 질문
+    url: https://github.com/hongjunna/railnow-api/discussions/categories/q-a
+    about: Ask in Discussions. Issues are for bugs. 사용법 질문은 Discussions에, 버그는 Issues에.
+  - name: Ideas for new features / 기능 아이디어
+    url: https://github.com/hongjunna/railnow-api/discussions/categories/ideas
+    about: Discuss new endpoints and improvements. 새 엔드포인트와 개선 아이디어.
   - name: API reference (Swagger)
     url: https://railnow.runvia.app/api/docs/en
     about: Every endpoint, parameter and response field. 모든 엔드포인트와 응답 필드.
-  - name: Developer Center
-    url: https://railnow.runvia.app/developer
-    about: Issue, extend or manage API keys. API 키 발급·연장·관리.
-  - name: Outages and account questions
+  - name: Outages and account questions / 장애·계정 문의
     url: https://github.com/hongjunna/railnow-api#support
     about: Email us about outages or anything involving your API key. 장애·키 관련 문의는 이메일로.

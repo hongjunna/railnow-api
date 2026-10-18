@@ -1,11 +1,12 @@
 name: Bug report / 버그 제보
-description: Wrong data, errors or unexpected responses. 잘못된 데이터, 오류, 예상과 다른 응답.
+description: Wrong data, errors, unexpected responses or documentation mistakes. 잘못된 데이터, 오류, 예상과 다른 응답, 문서 오류.
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
         **Never paste your API key.** 이슈에 API 키를 붙여 넣지 마세요.
+        Questions about using the API go to [Discussions](https://github.com/hongjunna/railnow-api/discussions/categories/q-a). 사용법 질문은 Discussions에 남겨 주세요.
   - type: input
     id: endpoint
     attributes:

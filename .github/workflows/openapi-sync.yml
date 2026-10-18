@@ -1,0 +1,31 @@
+name: OpenAPI sync
+
+on:
+  schedule:
+    # Every day at 09:17 KST (00:17 UTC)
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+
+# Nothing by default; the job below asks only for what it needs.
+permissions: {}
+
+concurrency:
+  group: openapi-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'hongjunna/railnow-api'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the automation/openapi-sync branch
+      pull-requests: write # open or update the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - name: Compare with the live spec and open a pull request
+        run: .github/scripts/openapi-sync.sh
+        env:
+          GH_TOKEN: ${{ github.token }}

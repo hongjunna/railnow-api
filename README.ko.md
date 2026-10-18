@@ -15,22 +15,35 @@
 <p align="center">
   <a href="https://railnow.runvia.app/api/docs"><img alt="API 문서" src="https://img.shields.io/badge/docs-Swagger-006E51"></a>
   <a href="openapi/openapi.en.json"><img alt="OpenAPI 3.0.3" src="https://img.shields.io/badge/OpenAPI-3.0.3-6BA539"></a>
-  <img alt="API 버전" src="https://img.shields.io/badge/API-v2.2.0-006E51">
+  <a href="https://railnow.runvia.app/api/docs/en/json"><img alt="API 버전" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Frailnow.runvia.app%2Fapi%2Fdocs%2Fen%2Fjson&query=%24.info.version&prefix=v&label=API&color=006E51"></a>
   <a href="https://railnow.runvia.app/developer"><img alt="무료 API 키" src="https://img.shields.io/badge/API%20key-free-C9F27B"></a>
 </p>
 
 <p align="center">
   <a href="README.md">English</a> ·
-  <a href="https://railnow.runvia.app">웹 서비스</a> ·
+  <a href="https://railnow.runvia.app">공식 웹사이트</a> ·
   <a href="https://railnow.runvia.app/developer">개발자 센터</a> ·
-  <a href="https://railnow.runvia.app/api/docs">API 문서</a>
+  <a href="https://railnow.runvia.app/api/docs">API 문서</a> ·
+  <a href="https://github.com/hongjunna/railnow-api/discussions">Discussions</a>
 </p>
 
 ---
 
 RailNow는 수도권 전철의 모든 열차를 추적합니다. 서울시 실시간 도착정보를 수 분 간격으로 수집하고 공식 시각표로 보정해 열차별 현재 위치, 다음 역, 지연(초 단위), 행선지를 제공합니다. 역별 도착 정보, 시각표, 역간 거리, 실측 구간 소요시간 통계도 조회할 수 있습니다.
 
-이 저장소에는 공개 문서, OpenAPI 명세, 예제 코드가 있습니다. 버그 제보와 기능 요청은 이슈로 남겨 주세요.
+이 저장소에는 공개 문서, OpenAPI 명세, 예제 코드가 있습니다. API 서버의 소스 코드는 공개하지 않습니다.
+
+## 링크
+
+| | |
+|---|---|
+| 공식 웹사이트 | https://railnow.runvia.app |
+| API 문서 | https://railnow.runvia.app/api/docs (한국어) · https://railnow.runvia.app/api/docs/en (English) |
+| 개발자 센터 (API 키 발급) | https://railnow.runvia.app/developer |
+| RapidAPI | https://rapidapi.com/hongjunna/api/railnow |
+| Postman 문서 | https://documenter.getpostman.com/view/59032951/2sBYHSxfc7 |
+| OpenAPI 명세 | [`openapi/openapi.en.json`](openapi/openapi.en.json) · https://railnow.runvia.app/api/docs/en/json |
+| Discussions | https://github.com/hongjunna/railnow-api/discussions |
 
 ## 주요 기능
 
@@ -43,7 +56,14 @@ RailNow는 수도권 전철의 모든 열차를 추적합니다. 서울시 실�
 
 ## 시작하기
 
-**1. 무료 API 키 발급.** [개발자 센터](https://railnow.runvia.app/developer)에서 Google로 로그인하고 키(`jl_...`)를 발급합니다.
+**1. 무료 API 키 발급.**
+
+1. [개발자 센터](https://railnow.runvia.app/developer)에서 Google로 로그인합니다.
+2. **새 API 키 발급**을 누르고 이용약관에 동의합니다.
+3. 키 이름, 사용 목적, 연락처 이메일을 입력합니다. 브라우저에서 호출할 때가 아니면 승인 도메인은 비워 두세요.
+4. 발급된 키(`jl_...`)를 복사합니다. 키 원문은 한 번만 보이므로 안전한 곳에 보관하세요.
+
+키는 소스 코드에 넣지 마세요. 환경 변수나 비밀 저장소에서 읽고, 공개 저장소나 사용자에게 배포되는 프런트엔드 코드에 포함하지 마세요.
 
 **2. API 호출.**
 
@@ -59,13 +79,15 @@ curl -H "X-API-Key: $RAILNOW_API_KEY" \
   "https://railnow.runvia.app/api/v1/train/lines/1002/trains"
 ```
 
+JSON 응답이 오면 성공입니다. `401`이면 키가 없거나 잘못 입력된 것입니다.
+
 **3. 출처 로고 표시.** RailNow 데이터를 보여주는 화면에는 로고를 반드시 표시해야 합니다. [출처 표기](#출처-표기)를 참고하세요.
 
 [`examples/`](examples)에 [curl](examples/curl/quickstart.sh), [JavaScript](examples/javascript/quickstart.mjs), [Python](examples/python/quickstart.py) 예제가 있습니다.
 
 ## 엔드포인트
 
-기본 주소는 `https://railnow.runvia.app`입니다. 모든 엔드포인트는 `GET`이며 `X-API-Key` 헤더가 필요합니다.
+기본 주소는 `https://railnow.runvia.app`입니다. 아래 엔드포인트는 모두 `GET`이며 `X-API-Key` 헤더가 필요합니다.
 
 ### 열차
 
@@ -153,7 +175,11 @@ curl -H "X-API-Key: $RAILNOW_API_KEY" \
 | `403` | `{"error":"Domain is not allowed for this API key"}` | 승인 도메인이 아닌 곳에서 요청함 |
 | `429` | `{"error":"..."}` | 요청 한도 초과. `Retry-After` 헤더의 초만큼 기다린 뒤 다시 요청하세요. |
 
-RapidAPI 마켓에서도 구독할 수 있습니다. RapidAPI에서 구독했다면 개발자 센터에서 계정을 연결해 사용량과 요청 기록을 확인하세요.
+검증 오류(`400`, `404`)는 `{"statusCode", "error", "message"}` 형식이며 `message`에 한국어로 원인을 알려줍니다.
+
+`403`과 함께 `error code: 1010`이라는 텍스트가 오면 CDN이 클라이언트의 User-Agent를 거부한 것입니다. Python 기본 `urllib`이 이렇게 차단됩니다. [Python 예제](examples/python/quickstart.py)처럼 `User-Agent` 헤더를 직접 지정하세요.
+
+[RapidAPI](https://rapidapi.com/hongjunna/api/railnow)에서도 RapidAPI 계정으로 구독할 수 있습니다. RapidAPI로 구독했다면 개발자 센터에서 계정을 연결해 사용량과 요청 기록을 확인하세요.
 
 ## 출처 표기
 
@@ -180,7 +206,7 @@ RapidAPI 마켓에서도 구독할 수 있습니다. RapidAPI에서 구독했다
 
 ## OpenAPI 명세
 
-[`openapi/openapi.en.json`](openapi/openapi.en.json)은 영어 OpenAPI 3.0.3 명세입니다. [OpenAPI Generator](https://openapi-generator.tech)로 클라이언트를 만들거나 Postman·Insomnia로 가져올 수 있습니다. 최신 명세는 https://railnow.runvia.app/api/docs/en/json 에 있습니다.
+[`openapi/openapi.en.json`](openapi/openapi.en.json)은 영어 OpenAPI 3.0.3 명세입니다. [OpenAPI Generator](https://openapi-generator.tech)로 클라이언트를 만들거나 Postman·Insomnia로 가져올 수 있습니다. 최신 명세는 https://railnow.runvia.app/api/docs/en/json 에 있습니다. [GitHub Actions 워크플로](.github/workflows/openapi-sync.yml)가 매일 공개 명세를 확인하고 바뀌면 풀 리퀘스트를 엽니다.
 
 ```bash
 npx @openapitools/openapi-generator-cli generate \
@@ -195,8 +221,17 @@ RailNow는 서울 열린데이터광장의 실시간 도착정보와 국가철�
 
 ## 문의
 
-- **버그 제보·기능 요청**: [이슈 등록](https://github.com/hongjunna/railnow-api/issues/new/choose)
-- **장애·기타 문의**: [junlab0801@gmail.com](mailto:junlab0801@gmail.com)
-- **약관**: [API 이용약관 및 개인정보 처리방침](https://healthy-sail-1cd.notion.site/API-3e2ee71053db80d28500db98f8dd0532?source=copy_link)
+| 채널 | 용도 |
+|---|---|
+| [Issues](https://github.com/hongjunna/railnow-api/issues/new/choose) | 버그 신고: 잘못된 데이터, 오류, 예상과 다른 응답, 문서 오류 |
+| [Discussions](https://github.com/hongjunna/railnow-api/discussions) | API 사용법 질문(Q&A), 기능 아이디어(Ideas), RailNow로 만든 프로젝트 소개(Show and Tell), API 업데이트 공지(Announcements) |
+| [junlab0801@gmail.com](mailto:junlab0801@gmail.com) | 장애, API 키·계정 문의, 공개하기 어려운 내용 |
 
-이 저장소의 예제 코드는 [MIT 라이선스](LICENSE)를 따릅니다. API와 데이터 이용은 위 이용약관을 따릅니다.
+이슈나 Discussions에 API 키를 올리지 마세요.
+
+## 라이선스와 이용약관
+
+- **이 저장소의 문서와 예제 코드**는 [MIT 라이선스](LICENSE)를 따릅니다. 그 밖의 대상에는 적용되지 않습니다([NOTICE](NOTICE.md) 참고). 예제는 자유롭게 복사해 쓸 수 있습니다.
+- **RailNow API 서비스와 제공 데이터**는 MIT 라이선스의 적용 대상이 아닙니다. API 키를 발급할 때 동의하는 [API 이용약관 및 개인정보 처리방침](https://healthy-sail-1cd.notion.site/API-3e2ee71053db80d28500db98f8dd0532?source=copy_link)을 따릅니다.
+- **RailNow 이름, 로고, 브랜드 자산**(이 저장소의 [`assets/`](assets) 포함)도 MIT 라이선스의 적용 대상이 아닙니다. RailNow를 데이터 제공자로 표시하는 용도로만 [출처 표기 규칙](#출처-표기)에 따라 사용할 수 있습니다. RailNow가 여러분의 서비스를 보증하거나 운영하는 것처럼 보이게 쓰지 마세요.
+- [`openapi/`](openapi)의 OpenAPI 명세는 클라이언트 생성을 돕기 위해 공개합니다. 명세가 설명하는 API를 사용하는 것은 여전히 이용약관을 따릅니다.
