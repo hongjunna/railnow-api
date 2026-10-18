@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: API reference (Swagger)
+    url: https://railnow.runvia.app/api/docs/en
+    about: Every endpoint, parameter and response field. 모든 엔드포인트와 응답 필드.
+  - name: Developer Center
+    url: https://railnow.runvia.app/developer
+    about: Issue, extend or manage API keys. API 키 발급·연장·관리.
+  - name: Outages and account questions
+    url: https://github.com/hongjunna/railnow-api#support
+    about: Email us about outages or anything involving your API key. 장애·키 관련 문의는 이메일로.

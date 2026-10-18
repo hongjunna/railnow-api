@@ -1,0 +1,4085 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "RailNow API — South Korea Real-Time Subway & Railway Data",
+    "description": "**🔑 [Get your free API key (Developer Center) →](https://railnow.runvia.app/developer?lang=en)** · [Korean docs](https://railnow.runvia.app/api/docs)\n\nRailNow provides developer-friendly access to South Korea's subway and railway data, including real-time train locations, station information, route distances, travel times, and operational statistics.\n\nDesigned to make Korean railway data accessible to developers worldwide, without requiring Korean phone number verification.\n\n#### Authentication\n- Every request needs an API key in the `X-API-Key` header. Sign in with Google at the [developer center](https://railnow.runvia.app/developer?lang=en) to get a free key (`jl_...`), then click **Authorize** to try requests here.\n- Each key can make up to 500 requests per hour and 5,000 requests per day. Both windows start from the time the key was issued and reset every hour and every 24 hours from that time; requests over a limit return 429 with a `Retry-After` header.\n- Also available on RapidAPI.\n\n#### Attribution\n- **Every service that uses RailNow data must credit us as the data provider by showing our logo on screens that display the data.**\n- We recommend the \"Provided by\" logo. Pick the one that fits your background and, where possible, link it to https://railnow.runvia.app. Do not stretch, recolor or alter the logos.\n\n![Provided by RailNow](https://railnow.runvia.app/brand/railnow-provided-by-universal.svg)\n\n| Background | \"Provided by\" logo | RailNow logo |\n|---|---|---|\n| Light | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-light.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-light.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-light.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-light.png) |\n| Dark | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-dark.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-dark.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-dark.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-dark.png) |\n| Any | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-universal.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-universal.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-universal.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-universal.png) |\n\nSquare icon: [SVG](https://railnow.runvia.app/brand/railnow-icon.svg) · [PNG 512×512](https://railnow.runvia.app/brand/railnow-icon.png). Previews and HTML snippets are in the [developer center](https://railnow.runvia.app/developer?lang=en).\n\n#### Response language\nAdd `lang=en` to any request to get station names, line names, train statuses, directions, messages, and other data values in English (e.g. `Arrived` instead of `도착`, `Up` instead of `상행`). Without it (or with `lang=ko`), values are returned in Korean as provided by the source data.",
+    "version": "2.2.0"
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key from the RailNow developer center (jl_...)"
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/station/lines": {
+      "get": {
+        "summary": "List subway lines",
+        "tags": [
+          "Station"
+        ],
+        "description": "Retrieves the full list of operating subway lines including line IDs and line names.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lineList": {
+                      "type": "array",
+                      "description": "List of active subway lines",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number",
+                            "description": "Subway line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Subway line name"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Subway line name"
+                          },
+                          "region": {
+                            "type": "string",
+                            "description": "Region"
+                          },
+                          "color": {
+                            "type": "string",
+                            "description": "Line color",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listSubwayLines"
+      }
+    },
+    "/api/v1/station/search": {
+      "get": {
+        "summary": "Search stations",
+        "tags": [
+          "Station"
+        ],
+        "description": "Searches subway stations by name or Korean initial consonants (Chosung, e.g. \"ㄱㄴ\" -> \"Gangnam\").\nOptional line filtering is supported via `lineId`. Transfer stations appear with distinct station IDs per line.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "description": "Station name or initials"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": false,
+            "description": "Filter by subway line ID (optional)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "stations": {
+                      "type": "array",
+                      "description": "Station candidates (transfer stations appear per line)",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "stationId": {
+                            "type": "number",
+                            "description": "Station unique ID"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Station name"
+                          },
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Subway line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Subway line name"
+                          }
+                        }
+                      }
+                    },
+                    "totalCount": {
+                      "type": "number",
+                      "description": "Total matched count"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "searchStations"
+      }
+    },
+    "/api/v1/station/search/{name}": {
+      "get": {
+        "summary": "Search station code by path",
+        "tags": [
+          "Station"
+        ],
+        "description": "Queries station candidates by station name in URL path. Supports substring and Chosung matching.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "description": "Station name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "stations": {
+                      "type": "array",
+                      "description": "Station candidates (transfer stations appear per line)",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "stationId": {
+                            "type": "number",
+                            "description": "Station unique ID"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Station name"
+                          },
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Subway line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Subway line name"
+                          }
+                        }
+                      }
+                    },
+                    "totalCount": {
+                      "type": "number",
+                      "description": "Total matched count"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "searchStationCodeByPath"
+      }
+    },
+    "/api/v1/station/distances": {
+      "get": {
+        "summary": "Get station-to-station distances and travel times",
+        "tags": [
+          "Station"
+        ],
+        "description": "Retrieves official section distances (in meters) and baseline travel times (in seconds).\nFilter by line (`lineId`), station surroundings (`stationId`), or a specific section (`stationAId` and `stationBId`).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": false,
+            "description": "Subway line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationId",
+            "required": false,
+            "description": "Station ID for all adjacent sections"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationAId",
+            "required": false,
+            "description": "Section Station A ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationBId",
+            "required": false,
+            "description": "Section Station B ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "distances": {
+                      "type": "array",
+                      "description": "Station-to-station distance and travel time list",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Line name"
+                          },
+                          "stationAId": {
+                            "type": "number",
+                            "description": "Station A ID"
+                          },
+                          "stationAName": {
+                            "type": "string",
+                            "description": "Station A name"
+                          },
+                          "stationBId": {
+                            "type": "number",
+                            "description": "Station B ID"
+                          },
+                          "stationBName": {
+                            "type": "string",
+                            "description": "Station B name"
+                          },
+                          "distanceMeters": {
+                            "type": "number",
+                            "description": "Section distance in meters"
+                          },
+                          "travelTimeSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Baseline travel time in seconds"
+                          },
+                          "sourceType": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Source type"
+                          },
+                          "sourceDate": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Source reference date"
+                          }
+                        }
+                      }
+                    },
+                    "totalCount": {
+                      "type": "number",
+                      "description": "Total section count"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getStationToStationDistancesAndTravelTimes"
+      }
+    },
+    "/api/v1/station/{stationId}/transfers": {
+      "get": {
+        "summary": "Get transfer lines for a station",
+        "tags": [
+          "Station"
+        ],
+        "description": "Retrieves transfer station IDs and line information for other subway lines sharing the same station name.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "path",
+            "name": "stationId",
+            "required": true,
+            "description": "Station ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "stationId": {
+                      "type": "number",
+                      "description": "Base station ID"
+                    },
+                    "transfers": {
+                      "type": "array",
+                      "description": "Transfer station candidates on other lines",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "stationId": {
+                            "type": "number",
+                            "description": "Transfer station ID"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Station name"
+                          },
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Transfer subway line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Transfer subway line name"
+                          }
+                        }
+                      }
+                    },
+                    "transferCount": {
+                      "type": "number",
+                      "description": "Number of transfer lines"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getTransferLinesForStation"
+      }
+    },
+    "/api/v1/station/{stationId}/board": {
+      "get": {
+        "summary": "Get the real-time arrival board for a station",
+        "tags": [
+          "Station"
+        ],
+        "description": "Returns calibrated real-time train positions and arrival seconds by direction within 5 stations.\nIf no train is within range, up to 3 upcoming trains are returned (mode: FAR).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Service date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": false,
+            "description": "Filter by line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "simple",
+            "required": false,
+            "description": "Simplify status into arrived/moving"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "stationId",
+            "required": true,
+            "description": "Station unique ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "station": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "subwayId": {
+                          "type": "number"
+                        },
+                        "subwayName": {
+                          "type": "string"
+                        },
+                        "stationCode": {
+                          "type": "string",
+                          "description": "Public station code",
+                          "nullable": true
+                        },
+                        "roadAddress": {
+                          "type": "string",
+                          "description": "Road address",
+                          "nullable": true
+                        },
+                        "lotAddress": {
+                          "type": "string",
+                          "description": "Lot address",
+                          "nullable": true
+                        },
+                        "latitude": {
+                          "type": "number",
+                          "description": "Latitude",
+                          "nullable": true
+                        },
+                        "longitude": {
+                          "type": "number",
+                          "description": "Longitude",
+                          "nullable": true
+                        },
+                        "nameEn": {
+                          "type": "string",
+                          "description": "English name",
+                          "nullable": true
+                        },
+                        "lineColor": {
+                          "type": "string",
+                          "description": "Line color",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "nowTime": {
+                      "type": "string",
+                      "description": "Time the response was generated (KST, human-readable format)"
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "NEARBY",
+                        "FAR"
+                      ],
+                      "description": "`NEARBY`: trains were found within the 5 stations preceding the current station. `FAR`: no train is within that range, so up to 3 trains that will reach the current station from farther away are returned instead."
+                    },
+                    "directions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "direction": {
+                            "type": "string",
+                            "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)"
+                          },
+                          "previousStations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": true,
+                              "properties": {
+                                "stationId": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "station": {
+                                  "type": "string",
+                                  "description": "Station name"
+                                },
+                                "stopsAway": {
+                                  "type": "number",
+                                  "description": "Number of physical stops from the current station (1 means the immediately preceding station)"
+                                }
+                              }
+                            },
+                            "description": "Up to 5 stations a train passes through before reaching the current station in this direction, ordered from farthest to nearest"
+                          }
+                        }
+                      },
+                      "description": "Preceding stations for each direction (up, down, etc.) that serves this station"
+                    },
+                    "trains": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "trainNo": {
+                            "type": "string",
+                            "description": "Train number"
+                          },
+                          "direction": {
+                            "type": "string",
+                            "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)"
+                          },
+                          "stopsAway": {
+                            "type": "number",
+                            "description": "Number of physical stops remaining until the current station (0 means the train is at the current station)"
+                          },
+                          "terminatesAtCurrentStation": {
+                            "type": "boolean",
+                            "description": "Whether the current station is this train's terminal station"
+                          },
+                          "terminatesBeforeCurrentStation": {
+                            "type": "boolean",
+                            "description": "Whether the train terminates before reaching the current station (if so, `arrivalEtaSeconds` is null)"
+                          },
+                          "arrivalEtaSeconds": {
+                            "type": "number",
+                            "description": "Estimated seconds until arrival at the current station. Null for trains that do not reach the current station",
+                            "nullable": true
+                          },
+                          "trainStatus": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Meaning of the `status` values: `접근` (approaching): about to arrive at a station / `도착` (arrived): stopped at a station / `출발` (departed): has just left a station / `운행중` (running): moving between stations / `운행종료` (ended): considered out of service once the grace period after arriving at the terminal station has passed (train API only) / `운행예정` (scheduled): has not yet departed its origin station (train API only). The fields included differ by status, so fields without a value may be omitted or null. When `mode` is `RAW` (lines without a timetable), `접근`/`도착`/`출발`/`운행중` are roughly inferred from the real-time API's `arvlCd` alone; only `currentStation`, `currentStaId`, `remainingSeconds`, and `textKorean` are populated, and timetable-based fields (`scheduled*`, `progress`, `nextAction`, etc.) are not included.",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Train status: `접근` (approaching) | `도착` (arrived) | `출발` (departed) | `운행중` (running) | `운행종료` (ended) | `운행예정` (scheduled)"
+                              },
+                              "currentStation": {
+                                "type": "string",
+                                "description": "Current station name (`접근`, `도착`, `출발`, and `운행종료` statuses)",
+                                "nullable": true
+                              },
+                              "currentStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "nextStation": {
+                                "type": "string",
+                                "description": "Next station name (`출발` and `운행중` statuses)",
+                                "nullable": true
+                              },
+                              "nextStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "previousStation": {
+                                "type": "string",
+                                "description": "Name of the station the train last departed (`운행중` status)",
+                                "nullable": true
+                              },
+                              "previousStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "departureStation": {
+                                "type": "string",
+                                "description": "Origin station name (`운행예정` status only)",
+                                "nullable": true
+                              },
+                              "departureStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "scheduledArriveTime": {
+                                "type": "string",
+                                "description": "Scheduled arrival time from the timetable",
+                                "nullable": true
+                              },
+                              "scheduledDepartureTime": {
+                                "type": "string",
+                                "description": "Scheduled departure time from the timetable",
+                                "nullable": true
+                              },
+                              "scheduledPreviousDeparture": {
+                                "type": "string",
+                                "description": "Scheduled departure time from the previous station (`운행중` status)",
+                                "nullable": true
+                              },
+                              "scheduledNextArrive": {
+                                "type": "string",
+                                "description": "Scheduled arrival time at the next station (`운행중` status)",
+                                "nullable": true
+                              },
+                              "arriveTime": {
+                                "type": "string",
+                                "description": "Actual (estimated) arrival time, including delay",
+                                "nullable": true
+                              },
+                              "departureTime": {
+                                "type": "string",
+                                "description": "Actual (estimated) departure time, including delay",
+                                "nullable": true
+                              },
+                              "previousDeparture": {
+                                "type": "string",
+                                "description": "Actual (estimated) departure time from the previous station, including delay",
+                                "nullable": true
+                              },
+                              "nextArrive": {
+                                "type": "string",
+                                "description": "Actual (estimated) arrival time at the next station, including delay",
+                                "nullable": true
+                              },
+                              "remainingSeconds": {
+                                "type": "number",
+                                "description": "`운행예정` status: seconds until departure. `RAW` mode: seconds until arrival at the current station as reported by the real-time API (`barvlDt`)",
+                                "nullable": true
+                              },
+                              "delaySeconds": {
+                                "type": "number",
+                                "description": "Delay in seconds (actual minus scheduled; negative means ahead of schedule). Null in `운행예정` status because it is not yet known",
+                                "nullable": true
+                              },
+                              "calibratedTime": {
+                                "type": "number",
+                                "description": "Calibrated current time (seconds since midnight)"
+                              },
+                              "textKorean": {
+                                "type": "string",
+                                "description": "Human-readable summary sentence in Korean"
+                              },
+                              "progress": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Included only in detail requests. Progress through the current phase (e.g. from `접근` to `운행중`)",
+                                "properties": {
+                                  "current": {
+                                    "type": "number",
+                                    "description": "Elapsed seconds"
+                                  },
+                                  "total": {
+                                    "type": "number",
+                                    "description": "Total length of the phase in seconds"
+                                  },
+                                  "percent": {
+                                    "type": "number",
+                                    "description": "Progress (%)"
+                                  }
+                                }
+                              },
+                              "nextAction": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Included only in detail requests. The upcoming status transition (null if there are no further transitions)",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "description": "The `status` value the train will change to next"
+                                  },
+                                  "station": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "stationId": {
+                                    "type": "number",
+                                    "nullable": true
+                                  },
+                                  "remainingSeconds": {
+                                    "type": "number",
+                                    "description": "Seconds until the transition"
+                                  }
+                                },
+                                "nullable": true
+                              }
+                            },
+                            "nullable": true
+                          },
+                          "trainInfo": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Train information. Destination prefers a confirmed stable API announcement, otherwise the timetable; a destination announcement does not prove where the train actually terminated. Train type comes from realtime data; direction and express may come from the timetable.",
+                            "properties": {
+                              "destination": {
+                                "type": "string",
+                                "description": "Destination (terminal station name)",
+                                "nullable": true
+                              },
+                              "destinationPending": {
+                                "type": "boolean",
+                                "description": "An API destination exists but is not confirmed for display; keep the timetable or previous confirmed value"
+                              },
+                              "destinationChange": {
+                                "type": "object",
+                                "description": "Confirmed destination announcement change; not proof of actual termination",
+                                "properties": {
+                                  "destinationStationId": {
+                                    "type": "number"
+                                  },
+                                  "destination": {
+                                    "type": "string"
+                                  },
+                                  "previousDestination": {
+                                    "type": "string"
+                                  },
+                                  "observedAt": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "direction": {
+                                "type": "string",
+                                "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle). Null if not in the timetable",
+                                "nullable": true
+                              },
+                              "express": {
+                                "type": "boolean",
+                                "description": "Whether the train is an express (null if not in the timetable)",
+                                "nullable": true
+                              },
+                              "trainType": {
+                                "type": "string",
+                                "description": "Train type: `일반` (local) | `급행` (express) | `ITX`. Included only when confirmed by real-time data; when unknown, the field is omitted rather than guessed."
+                              },
+                              "specialService": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "DEPOT_RUN: depot service; UNVERIFIED_RUN: 9xxx number observed, temporary or diverted operation unconfirmed; UNSCHEDULED_RERUN: rerun without a matching timetable.",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "description": "DEPOT_RUN | UNVERIFIED_RUN | UNSCHEDULED_RERUN"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "description": "Display name (e.g. `보라매병원 입출고 열차`)"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "delaySeconds": {
+                            "type": "number",
+                            "description": "Delay in seconds (actual minus scheduled)"
+                          },
+                          "realtimeData": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Matched raw data received from the Seoul real-time subway API (values before calibration). Null when no real-time data is matched (ended, estimated, or scheduled status).",
+                            "properties": {
+                              "subwayId": {
+                                "type": "number",
+                                "description": "Line ID"
+                              },
+                              "trainNo": {
+                                "type": "string",
+                                "description": "Train number, normalized (e.g. leading zeros removed)"
+                              },
+                              "trainType": {
+                                "type": "string",
+                                "description": "Train type: `일반` (local) | `급행` (express) | `ITX`",
+                                "nullable": true
+                              },
+                              "direction": {
+                                "type": "string",
+                                "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)",
+                                "nullable": true
+                              },
+                              "destinationStationId": {
+                                "type": "number",
+                                "description": "Destination (terminal) station ID",
+                                "nullable": true
+                              },
+                              "destinationName": {
+                                "type": "string",
+                                "description": "Destination name announced by the source API",
+                                "nullable": true
+                              },
+                              "stationId": {
+                                "type": "number",
+                                "description": "ID of the station where this data was observed"
+                              },
+                              "status": {
+                                "type": "number",
+                                "description": "Seoul API arrival code (`arvlCd`). 2 = departed the previous station; 0, 1, 3, 4, 5 = imminent events such as entering or arriving; 99 = not yet tracked (placeholder while running)",
+                                "nullable": true
+                              },
+                              "arrivalEtaSeconds": {
+                                "type": "number",
+                                "description": "Estimated seconds remaining until arrival (`barvlDt`)",
+                                "nullable": true
+                              },
+                              "sourceReceivedAt": {
+                                "type": "string",
+                                "description": "Time the Seoul API updated this data (KST, \"YYYY-MM-DD HH:MM:SS\")",
+                                "nullable": true
+                              },
+                              "arrivalMsg1": {
+                                "type": "string",
+                                "description": "Arrival message (e.g. \"OO역 진입\")",
+                                "nullable": true
+                              },
+                              "arrivalMsg2": {
+                                "type": "string",
+                                "description": "Secondary arrival message (usually the station name)",
+                                "nullable": true
+                              },
+                              "isLast": {
+                                "type": "boolean",
+                                "description": "Whether this is the last train of the day"
+                              }
+                            },
+                            "nullable": true
+                          }
+                        }
+                      },
+                      "description": "All nearby trains, or up to 3 distant trains, depending on `mode`"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getRealTimeArrivalBoardForStation"
+      }
+    },
+    "/api/v1/station/{keyword}": {
+      "get": {
+        "summary": "Get station details by ID or name",
+        "tags": [
+          "Station"
+        ],
+        "description": "Retrieves detailed information of a subway station by its station ID or name.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "keyword",
+            "required": true,
+            "description": "Station ID or name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getStationDetailsByIdOrName"
+      }
+    },
+    "/api/v1/realtime/all": {
+      "get": {
+        "summary": "Get a full snapshot of Seoul subway real-time arrivals",
+        "tags": [
+          "Realtime"
+        ],
+        "description": "Retrieves the entire current snapshot array of real-time arrivals from Seoul Subway API.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getFullSnapshotOfSeoulSubwayRealTimeArrivals"
+      }
+    },
+    "/api/v1/realtime/train/{trainNo}": {
+      "get": {
+        "summary": "Get raw real-time data for a specific train",
+        "tags": [
+          "Realtime"
+        ],
+        "description": "Retrieves raw real-time feed record for a specific train without timetable calibration.\nFor calibrated arrival estimates, please use `GET /api/v1/train/:trainNo`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Service date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "trainNo",
+            "required": true,
+            "description": "Train number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getRawRealTimeDataForSpecificTrain"
+      }
+    },
+    "/api/v1/timetable/": {
+      "get": {
+        "summary": "Search loaded train timetables",
+        "tags": [
+          "Timetable"
+        ],
+        "description": "Retrieves timetable versions valid as of `date` (Slowly Changing Dimension Type 2).\nFilter by data source (`korail`/`seoulmetro`/`kric`), train number, line ID, or passing station.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Reference date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "korail",
+                "seoulmetro",
+                "kric"
+              ]
+            },
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "description": "Timetable source"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "in": "query",
+            "name": "trainNumber",
+            "required": false,
+            "description": "Train number"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,10}$"
+            },
+            "in": "query",
+            "name": "subwayId",
+            "required": false,
+            "description": "Subway line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "station",
+            "required": false,
+            "description": "Filter by passing station name"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "searchLoadedTrainTimetables"
+      }
+    },
+    "/api/v1/calibration/train/live/{trainNo}": {
+      "get": {
+        "summary": "[Deprecated] Get live calibrated train status",
+        "tags": [
+          "Calibration"
+        ],
+        "description": "⚠️ **Deprecated**: Please use `GET /api/v1/train/:trainNo` instead, which supports full operational states (LIVE/SCHEDULED/ENDED/RAW).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": true,
+            "description": "Line ID (e.g. 1001)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Date in YYYY-MM-DD format (default: today in KST)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "smooth",
+            "required": false,
+            "description": "Whether to smooth the displayed time (default: true)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "simple",
+            "required": false,
+            "description": "If true, `trainStatus.status` (and `nextAction.status`) are grouped into two stages, `도착` (`접근` + `도착`) and `이동중` (`출발` + `운행중`), instead of the four stages `접근`/`도착`/`출발`/`운행중` (default: true)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "trainNo",
+            "required": true,
+            "description": "Train number"
+          }
+        ],
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "trainNo": {
+                      "type": "string",
+                      "description": "Train number as written in the matched timetable (e.g. X0059)"
+                    },
+                    "trainStatus": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Meaning of the `status` values: `접근` (approaching): about to arrive at a station / `도착` (arrived): stopped at a station / `출발` (departed): has just left a station / `운행중` (running): moving between stations / `운행종료` (ended): considered out of service once the grace period after arriving at the terminal station has passed (train API only) / `운행예정` (scheduled): has not yet departed its origin station (train API only). The fields included differ by status, so fields without a value may be omitted or null. When `mode` is `RAW` (lines without a timetable), `접근`/`도착`/`출발`/`운행중` are roughly inferred from the real-time API's `arvlCd` alone; only `currentStation`, `currentStaId`, `remainingSeconds`, and `textKorean` are populated, and timetable-based fields (`scheduled*`, `progress`, `nextAction`, etc.) are not included.",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "description": "Train status: `접근` (approaching) | `도착` (arrived) | `출발` (departed) | `운행중` (running) | `운행종료` (ended) | `운행예정` (scheduled)"
+                        },
+                        "currentStation": {
+                          "type": "string",
+                          "description": "Current station name (`접근`, `도착`, `출발`, and `운행종료` statuses)",
+                          "nullable": true
+                        },
+                        "currentStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "nextStation": {
+                          "type": "string",
+                          "description": "Next station name (`출발` and `운행중` statuses)",
+                          "nullable": true
+                        },
+                        "nextStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "previousStation": {
+                          "type": "string",
+                          "description": "Name of the station the train last departed (`운행중` status)",
+                          "nullable": true
+                        },
+                        "previousStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "departureStation": {
+                          "type": "string",
+                          "description": "Origin station name (`운행예정` status only)",
+                          "nullable": true
+                        },
+                        "departureStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "scheduledArriveTime": {
+                          "type": "string",
+                          "description": "Scheduled arrival time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledDepartureTime": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledPreviousDeparture": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the previous station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "scheduledNextArrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time at the next station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "arriveTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time, including delay",
+                          "nullable": true
+                        },
+                        "departureTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time, including delay",
+                          "nullable": true
+                        },
+                        "previousDeparture": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time from the previous station, including delay",
+                          "nullable": true
+                        },
+                        "nextArrive": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time at the next station, including delay",
+                          "nullable": true
+                        },
+                        "remainingSeconds": {
+                          "type": "number",
+                          "description": "`운행예정` status: seconds until departure. `RAW` mode: seconds until arrival at the current station as reported by the real-time API (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "delaySeconds": {
+                          "type": "number",
+                          "description": "Delay in seconds (actual minus scheduled; negative means ahead of schedule). Null in `운행예정` status because it is not yet known",
+                          "nullable": true
+                        },
+                        "calibratedTime": {
+                          "type": "number",
+                          "description": "Calibrated current time (seconds since midnight)"
+                        },
+                        "textKorean": {
+                          "type": "string",
+                          "description": "Human-readable summary sentence in Korean"
+                        },
+                        "progress": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. Progress through the current phase (e.g. from `접근` to `운행중`)",
+                          "properties": {
+                            "current": {
+                              "type": "number",
+                              "description": "Elapsed seconds"
+                            },
+                            "total": {
+                              "type": "number",
+                              "description": "Total length of the phase in seconds"
+                            },
+                            "percent": {
+                              "type": "number",
+                              "description": "Progress (%)"
+                            }
+                          }
+                        },
+                        "nextAction": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. The upcoming status transition (null if there are no further transitions)",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "description": "The `status` value the train will change to next"
+                            },
+                            "station": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "stationId": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "remainingSeconds": {
+                              "type": "number",
+                              "description": "Seconds until the transition"
+                            }
+                          },
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "trainInfo": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Train information. Destination prefers a confirmed stable API announcement, otherwise the timetable; a destination announcement does not prove where the train actually terminated. Train type comes from realtime data; direction and express may come from the timetable.",
+                      "properties": {
+                        "destination": {
+                          "type": "string",
+                          "description": "Destination (terminal station name)",
+                          "nullable": true
+                        },
+                        "destinationPending": {
+                          "type": "boolean",
+                          "description": "An API destination exists but is not confirmed for display; keep the timetable or previous confirmed value"
+                        },
+                        "destinationChange": {
+                          "type": "object",
+                          "description": "Confirmed destination announcement change; not proof of actual termination",
+                          "properties": {
+                            "destinationStationId": {
+                              "type": "number"
+                            },
+                            "destination": {
+                              "type": "string"
+                            },
+                            "previousDestination": {
+                              "type": "string"
+                            },
+                            "observedAt": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle). Null if not in the timetable",
+                          "nullable": true
+                        },
+                        "express": {
+                          "type": "boolean",
+                          "description": "Whether the train is an express (null if not in the timetable)",
+                          "nullable": true
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`. Included only when confirmed by real-time data; when unknown, the field is omitted rather than guessed."
+                        },
+                        "specialService": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "DEPOT_RUN: depot service; UNVERIFIED_RUN: 9xxx number observed, temporary or diverted operation unconfirmed; UNSCHEDULED_RERUN: rerun without a matching timetable.",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "description": "DEPOT_RUN | UNVERIFIED_RUN | UNSCHEDULED_RERUN"
+                            },
+                            "label": {
+                              "type": "string",
+                              "description": "Display name (e.g. `보라매병원 입출고 열차`)"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "smoothing": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Display-time smoothing details. Included only in `LIVE` status.",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Whether the request was made with `smooth=true`"
+                        },
+                        "applied": {
+                          "type": "boolean",
+                          "description": "Whether smoothing was actually applied, making the time differ from the original calibrated time"
+                        },
+                        "rawCalibratedTime": {
+                          "type": "number",
+                          "description": "Original calibrated time in seconds before smoothing, reflecting only the delay"
+                        },
+                        "offsetSeconds": {
+                          "type": "number",
+                          "description": "Seconds adjusted by smoothing (displayed time minus original calibrated time)"
+                        }
+                      }
+                    },
+                    "realtimeData": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Matched raw data received from the Seoul real-time subway API (values before calibration). Null when no real-time data is matched (ended, estimated, or scheduled status).",
+                      "properties": {
+                        "subwayId": {
+                          "type": "number",
+                          "description": "Line ID"
+                        },
+                        "trainNo": {
+                          "type": "string",
+                          "description": "Train number, normalized (e.g. leading zeros removed)"
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`",
+                          "nullable": true
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)",
+                          "nullable": true
+                        },
+                        "destinationStationId": {
+                          "type": "number",
+                          "description": "Destination (terminal) station ID",
+                          "nullable": true
+                        },
+                        "destinationName": {
+                          "type": "string",
+                          "description": "Destination name announced by the source API",
+                          "nullable": true
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "ID of the station where this data was observed"
+                        },
+                        "status": {
+                          "type": "number",
+                          "description": "Seoul API arrival code (`arvlCd`). 2 = departed the previous station; 0, 1, 3, 4, 5 = imminent events such as entering or arriving; 99 = not yet tracked (placeholder while running)",
+                          "nullable": true
+                        },
+                        "arrivalEtaSeconds": {
+                          "type": "number",
+                          "description": "Estimated seconds remaining until arrival (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "sourceReceivedAt": {
+                          "type": "string",
+                          "description": "Time the Seoul API updated this data (KST, \"YYYY-MM-DD HH:MM:SS\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg1": {
+                          "type": "string",
+                          "description": "Arrival message (e.g. \"OO역 진입\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg2": {
+                          "type": "string",
+                          "description": "Secondary arrival message (usually the station name)",
+                          "nullable": true
+                        },
+                        "isLast": {
+                          "type": "boolean",
+                          "description": "Whether this is the last train of the day"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "realtimeMatchedTimetable": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Timetable stop matched to the real-time (or last observed) data. Null when there is no real-time data to match (estimated status).",
+                      "properties": {
+                        "station": {
+                          "type": "string",
+                          "description": "Station name"
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "Station ID (populated only when the line is known)",
+                          "nullable": true
+                        },
+                        "arrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time (HH:MM:SS). Null at the origin station",
+                          "nullable": true
+                        },
+                        "departure": {
+                          "type": "string",
+                          "description": "Scheduled departure time (HH:MM:SS). Null at the terminal station",
+                          "nullable": true
+                        },
+                        "stopTime": {
+                          "type": "string",
+                          "description": "Dwell time",
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "delaySeconds": {
+                      "type": "number",
+                      "description": "Delay in seconds (actual arrival/departure minus scheduled)"
+                    },
+                    "nowTime": {
+                      "type": "string",
+                      "description": "Time the response was generated (KST, human-readable format)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deprecatedGetLiveCalibratedTrainStatus"
+      }
+    },
+    "/api/v1/calibration/train/live/{trainNo}/detail": {
+      "get": {
+        "summary": "[Deprecated] Get detailed live calibrated train status",
+        "tags": [
+          "Calibration"
+        ],
+        "description": "⚠️ **Deprecated**: Please use `GET /api/v1/train/:trainNo?detail=true` instead.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": true,
+            "description": "Line ID (e.g. 1001)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Date in YYYY-MM-DD format (default: today in KST)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "smooth",
+            "required": false,
+            "description": "Whether to smooth the displayed time (default: true)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "simple",
+            "required": false,
+            "description": "If true, `trainStatus.status` (and `nextAction.status`) are grouped into two stages, `도착` (`접근` + `도착`) and `이동중` (`출발` + `운행중`), instead of the four stages `접근`/`도착`/`출발`/`운행중` (default: true)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "trainNo",
+            "required": true,
+            "description": "Train number"
+          }
+        ],
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "trainNo": {
+                      "type": "string",
+                      "description": "Train number as written in the matched timetable (e.g. X0059)"
+                    },
+                    "trainStatus": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Meaning of the `status` values: `접근` (approaching): about to arrive at a station / `도착` (arrived): stopped at a station / `출발` (departed): has just left a station / `운행중` (running): moving between stations / `운행종료` (ended): considered out of service once the grace period after arriving at the terminal station has passed (train API only) / `운행예정` (scheduled): has not yet departed its origin station (train API only). The fields included differ by status, so fields without a value may be omitted or null. When `mode` is `RAW` (lines without a timetable), `접근`/`도착`/`출발`/`운행중` are roughly inferred from the real-time API's `arvlCd` alone; only `currentStation`, `currentStaId`, `remainingSeconds`, and `textKorean` are populated, and timetable-based fields (`scheduled*`, `progress`, `nextAction`, etc.) are not included.",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "description": "Train status: `접근` (approaching) | `도착` (arrived) | `출발` (departed) | `운행중` (running) | `운행종료` (ended) | `운행예정` (scheduled)"
+                        },
+                        "currentStation": {
+                          "type": "string",
+                          "description": "Current station name (`접근`, `도착`, `출발`, and `운행종료` statuses)",
+                          "nullable": true
+                        },
+                        "currentStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "nextStation": {
+                          "type": "string",
+                          "description": "Next station name (`출발` and `운행중` statuses)",
+                          "nullable": true
+                        },
+                        "nextStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "previousStation": {
+                          "type": "string",
+                          "description": "Name of the station the train last departed (`운행중` status)",
+                          "nullable": true
+                        },
+                        "previousStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "departureStation": {
+                          "type": "string",
+                          "description": "Origin station name (`운행예정` status only)",
+                          "nullable": true
+                        },
+                        "departureStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "scheduledArriveTime": {
+                          "type": "string",
+                          "description": "Scheduled arrival time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledDepartureTime": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledPreviousDeparture": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the previous station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "scheduledNextArrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time at the next station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "arriveTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time, including delay",
+                          "nullable": true
+                        },
+                        "departureTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time, including delay",
+                          "nullable": true
+                        },
+                        "previousDeparture": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time from the previous station, including delay",
+                          "nullable": true
+                        },
+                        "nextArrive": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time at the next station, including delay",
+                          "nullable": true
+                        },
+                        "remainingSeconds": {
+                          "type": "number",
+                          "description": "`운행예정` status: seconds until departure. `RAW` mode: seconds until arrival at the current station as reported by the real-time API (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "delaySeconds": {
+                          "type": "number",
+                          "description": "Delay in seconds (actual minus scheduled; negative means ahead of schedule). Null in `운행예정` status because it is not yet known",
+                          "nullable": true
+                        },
+                        "calibratedTime": {
+                          "type": "number",
+                          "description": "Calibrated current time (seconds since midnight)"
+                        },
+                        "textKorean": {
+                          "type": "string",
+                          "description": "Human-readable summary sentence in Korean"
+                        },
+                        "progress": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. Progress through the current phase (e.g. from `접근` to `운행중`)",
+                          "properties": {
+                            "current": {
+                              "type": "number",
+                              "description": "Elapsed seconds"
+                            },
+                            "total": {
+                              "type": "number",
+                              "description": "Total length of the phase in seconds"
+                            },
+                            "percent": {
+                              "type": "number",
+                              "description": "Progress (%)"
+                            }
+                          }
+                        },
+                        "nextAction": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. The upcoming status transition (null if there are no further transitions)",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "description": "The `status` value the train will change to next"
+                            },
+                            "station": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "stationId": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "remainingSeconds": {
+                              "type": "number",
+                              "description": "Seconds until the transition"
+                            }
+                          },
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "trainInfo": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Train information. Destination prefers a confirmed stable API announcement, otherwise the timetable; a destination announcement does not prove where the train actually terminated. Train type comes from realtime data; direction and express may come from the timetable.",
+                      "properties": {
+                        "destination": {
+                          "type": "string",
+                          "description": "Destination (terminal station name)",
+                          "nullable": true
+                        },
+                        "destinationPending": {
+                          "type": "boolean",
+                          "description": "An API destination exists but is not confirmed for display; keep the timetable or previous confirmed value"
+                        },
+                        "destinationChange": {
+                          "type": "object",
+                          "description": "Confirmed destination announcement change; not proof of actual termination",
+                          "properties": {
+                            "destinationStationId": {
+                              "type": "number"
+                            },
+                            "destination": {
+                              "type": "string"
+                            },
+                            "previousDestination": {
+                              "type": "string"
+                            },
+                            "observedAt": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle). Null if not in the timetable",
+                          "nullable": true
+                        },
+                        "express": {
+                          "type": "boolean",
+                          "description": "Whether the train is an express (null if not in the timetable)",
+                          "nullable": true
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`. Included only when confirmed by real-time data; when unknown, the field is omitted rather than guessed."
+                        },
+                        "specialService": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "DEPOT_RUN: depot service; UNVERIFIED_RUN: 9xxx number observed, temporary or diverted operation unconfirmed; UNSCHEDULED_RERUN: rerun without a matching timetable.",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "description": "DEPOT_RUN | UNVERIFIED_RUN | UNSCHEDULED_RERUN"
+                            },
+                            "label": {
+                              "type": "string",
+                              "description": "Display name (e.g. `보라매병원 입출고 열차`)"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "smoothing": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Display-time smoothing details. Included only in `LIVE` status.",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Whether the request was made with `smooth=true`"
+                        },
+                        "applied": {
+                          "type": "boolean",
+                          "description": "Whether smoothing was actually applied, making the time differ from the original calibrated time"
+                        },
+                        "rawCalibratedTime": {
+                          "type": "number",
+                          "description": "Original calibrated time in seconds before smoothing, reflecting only the delay"
+                        },
+                        "offsetSeconds": {
+                          "type": "number",
+                          "description": "Seconds adjusted by smoothing (displayed time minus original calibrated time)"
+                        }
+                      }
+                    },
+                    "realtimeData": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Matched raw data received from the Seoul real-time subway API (values before calibration). Null when no real-time data is matched (ended, estimated, or scheduled status).",
+                      "properties": {
+                        "subwayId": {
+                          "type": "number",
+                          "description": "Line ID"
+                        },
+                        "trainNo": {
+                          "type": "string",
+                          "description": "Train number, normalized (e.g. leading zeros removed)"
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`",
+                          "nullable": true
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)",
+                          "nullable": true
+                        },
+                        "destinationStationId": {
+                          "type": "number",
+                          "description": "Destination (terminal) station ID",
+                          "nullable": true
+                        },
+                        "destinationName": {
+                          "type": "string",
+                          "description": "Destination name announced by the source API",
+                          "nullable": true
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "ID of the station where this data was observed"
+                        },
+                        "status": {
+                          "type": "number",
+                          "description": "Seoul API arrival code (`arvlCd`). 2 = departed the previous station; 0, 1, 3, 4, 5 = imminent events such as entering or arriving; 99 = not yet tracked (placeholder while running)",
+                          "nullable": true
+                        },
+                        "arrivalEtaSeconds": {
+                          "type": "number",
+                          "description": "Estimated seconds remaining until arrival (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "sourceReceivedAt": {
+                          "type": "string",
+                          "description": "Time the Seoul API updated this data (KST, \"YYYY-MM-DD HH:MM:SS\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg1": {
+                          "type": "string",
+                          "description": "Arrival message (e.g. \"OO역 진입\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg2": {
+                          "type": "string",
+                          "description": "Secondary arrival message (usually the station name)",
+                          "nullable": true
+                        },
+                        "isLast": {
+                          "type": "boolean",
+                          "description": "Whether this is the last train of the day"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "realtimeMatchedTimetable": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Timetable stop matched to the real-time (or last observed) data. Null when there is no real-time data to match (estimated status).",
+                      "properties": {
+                        "station": {
+                          "type": "string",
+                          "description": "Station name"
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "Station ID (populated only when the line is known)",
+                          "nullable": true
+                        },
+                        "arrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time (HH:MM:SS). Null at the origin station",
+                          "nullable": true
+                        },
+                        "departure": {
+                          "type": "string",
+                          "description": "Scheduled departure time (HH:MM:SS). Null at the terminal station",
+                          "nullable": true
+                        },
+                        "stopTime": {
+                          "type": "string",
+                          "description": "Dwell time",
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "delaySeconds": {
+                      "type": "number",
+                      "description": "Delay in seconds (actual arrival/departure minus scheduled)"
+                    },
+                    "nowTime": {
+                      "type": "string",
+                      "description": "Time the response was generated (KST, human-readable format)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deprecatedGetDetailedLiveCalibratedTrainStatus"
+      }
+    },
+    "/api/v1/train/lines": {
+      "get": {
+        "summary": "List subway lines with real-time train tracking",
+        "tags": [
+          "Train"
+        ],
+        "description": "Retrieves the full list of operating subway lines with train schedules and real-time tracking.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "listSubwayLinesWithRealTimeTrainTracking"
+      }
+    },
+    "/api/v1/train/lines/{lineId}/trains": {
+      "get": {
+        "summary": "Get real-time train positions by line",
+        "tags": [
+          "Train"
+        ],
+        "description": "Retrieves calibrated real-time positions and statuses for all active trains on the specified line.\nSupports direction filtering (`direction`: UP/DOWN) and train type filtering (`trainType`: EXPRESS/LOCAL).\nLines without timetables are returned with mode: \"RAW\".",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Service date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "smooth",
+            "required": false,
+            "description": "Real-time position smoothing"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "detail",
+            "required": false,
+            "description": "Include progress & nextAction"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "simple",
+            "required": false,
+            "description": "Simplify status into arrived/moving"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "description": "Direction filter (UP or DOWN)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "trainType",
+            "required": false,
+            "description": "Train type filter (EXPRESS or LOCAL)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "path",
+            "name": "lineId",
+            "required": true,
+            "description": "Line ID (e.g. 1001)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "subwayId": {
+                      "type": "number",
+                      "description": "Line ID"
+                    },
+                    "nowTime": {
+                      "type": "string",
+                      "description": "Time the response was generated (KST, human-readable format)"
+                    },
+                    "trains": {
+                      "type": "array",
+                      "description": "Calibrated current position of each train detected in real time",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "trainNo": {
+                            "type": "string",
+                            "description": "Train number"
+                          },
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "LIVE",
+                              "RAW"
+                            ],
+                            "description": "`LIVE`: status calibrated against the timetable / `RAW`: the line has no timetable (e.g. privately operated lines), so only raw real-time data is provided"
+                          },
+                          "trainStatus": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Meaning of the `status` values: `접근` (approaching): about to arrive at a station / `도착` (arrived): stopped at a station / `출발` (departed): has just left a station / `운행중` (running): moving between stations / `운행종료` (ended): considered out of service once the grace period after arriving at the terminal station has passed (train API only) / `운행예정` (scheduled): has not yet departed its origin station (train API only). The fields included differ by status, so fields without a value may be omitted or null. When `mode` is `RAW` (lines without a timetable), `접근`/`도착`/`출발`/`운행중` are roughly inferred from the real-time API's `arvlCd` alone; only `currentStation`, `currentStaId`, `remainingSeconds`, and `textKorean` are populated, and timetable-based fields (`scheduled*`, `progress`, `nextAction`, etc.) are not included.",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Train status: `접근` (approaching) | `도착` (arrived) | `출발` (departed) | `운행중` (running) | `운행종료` (ended) | `운행예정` (scheduled)"
+                              },
+                              "currentStation": {
+                                "type": "string",
+                                "description": "Current station name (`접근`, `도착`, `출발`, and `운행종료` statuses)",
+                                "nullable": true
+                              },
+                              "currentStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "nextStation": {
+                                "type": "string",
+                                "description": "Next station name (`출발` and `운행중` statuses)",
+                                "nullable": true
+                              },
+                              "nextStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "previousStation": {
+                                "type": "string",
+                                "description": "Name of the station the train last departed (`운행중` status)",
+                                "nullable": true
+                              },
+                              "previousStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "departureStation": {
+                                "type": "string",
+                                "description": "Origin station name (`운행예정` status only)",
+                                "nullable": true
+                              },
+                              "departureStaId": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "scheduledArriveTime": {
+                                "type": "string",
+                                "description": "Scheduled arrival time from the timetable",
+                                "nullable": true
+                              },
+                              "scheduledDepartureTime": {
+                                "type": "string",
+                                "description": "Scheduled departure time from the timetable",
+                                "nullable": true
+                              },
+                              "scheduledPreviousDeparture": {
+                                "type": "string",
+                                "description": "Scheduled departure time from the previous station (`운행중` status)",
+                                "nullable": true
+                              },
+                              "scheduledNextArrive": {
+                                "type": "string",
+                                "description": "Scheduled arrival time at the next station (`운행중` status)",
+                                "nullable": true
+                              },
+                              "arriveTime": {
+                                "type": "string",
+                                "description": "Actual (estimated) arrival time, including delay",
+                                "nullable": true
+                              },
+                              "departureTime": {
+                                "type": "string",
+                                "description": "Actual (estimated) departure time, including delay",
+                                "nullable": true
+                              },
+                              "previousDeparture": {
+                                "type": "string",
+                                "description": "Actual (estimated) departure time from the previous station, including delay",
+                                "nullable": true
+                              },
+                              "nextArrive": {
+                                "type": "string",
+                                "description": "Actual (estimated) arrival time at the next station, including delay",
+                                "nullable": true
+                              },
+                              "remainingSeconds": {
+                                "type": "number",
+                                "description": "`운행예정` status: seconds until departure. `RAW` mode: seconds until arrival at the current station as reported by the real-time API (`barvlDt`)",
+                                "nullable": true
+                              },
+                              "delaySeconds": {
+                                "type": "number",
+                                "description": "Delay in seconds (actual minus scheduled; negative means ahead of schedule). Null in `운행예정` status because it is not yet known",
+                                "nullable": true
+                              },
+                              "calibratedTime": {
+                                "type": "number",
+                                "description": "Calibrated current time (seconds since midnight)"
+                              },
+                              "textKorean": {
+                                "type": "string",
+                                "description": "Human-readable summary sentence in Korean"
+                              },
+                              "progress": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Included only in detail requests. Progress through the current phase (e.g. from `접근` to `운행중`)",
+                                "properties": {
+                                  "current": {
+                                    "type": "number",
+                                    "description": "Elapsed seconds"
+                                  },
+                                  "total": {
+                                    "type": "number",
+                                    "description": "Total length of the phase in seconds"
+                                  },
+                                  "percent": {
+                                    "type": "number",
+                                    "description": "Progress (%)"
+                                  }
+                                }
+                              },
+                              "nextAction": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Included only in detail requests. The upcoming status transition (null if there are no further transitions)",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "description": "The `status` value the train will change to next"
+                                  },
+                                  "station": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "stationId": {
+                                    "type": "number",
+                                    "nullable": true
+                                  },
+                                  "remainingSeconds": {
+                                    "type": "number",
+                                    "description": "Seconds until the transition"
+                                  }
+                                },
+                                "nullable": true
+                              }
+                            },
+                            "nullable": true
+                          },
+                          "trainInfo": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Train information. Destination prefers a confirmed stable API announcement, otherwise the timetable; a destination announcement does not prove where the train actually terminated. Train type comes from realtime data; direction and express may come from the timetable.",
+                            "properties": {
+                              "destination": {
+                                "type": "string",
+                                "description": "Destination (terminal station name)",
+                                "nullable": true
+                              },
+                              "destinationPending": {
+                                "type": "boolean",
+                                "description": "An API destination exists but is not confirmed for display; keep the timetable or previous confirmed value"
+                              },
+                              "destinationChange": {
+                                "type": "object",
+                                "description": "Confirmed destination announcement change; not proof of actual termination",
+                                "properties": {
+                                  "destinationStationId": {
+                                    "type": "number"
+                                  },
+                                  "destination": {
+                                    "type": "string"
+                                  },
+                                  "previousDestination": {
+                                    "type": "string"
+                                  },
+                                  "observedAt": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "direction": {
+                                "type": "string",
+                                "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle). Null if not in the timetable",
+                                "nullable": true
+                              },
+                              "express": {
+                                "type": "boolean",
+                                "description": "Whether the train is an express (null if not in the timetable)",
+                                "nullable": true
+                              },
+                              "trainType": {
+                                "type": "string",
+                                "description": "Train type: `일반` (local) | `급행` (express) | `ITX`. Included only when confirmed by real-time data; when unknown, the field is omitted rather than guessed."
+                              },
+                              "specialService": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "DEPOT_RUN: depot service; UNVERIFIED_RUN: 9xxx number observed, temporary or diverted operation unconfirmed; UNSCHEDULED_RERUN: rerun without a matching timetable.",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "description": "DEPOT_RUN | UNVERIFIED_RUN | UNSCHEDULED_RERUN"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "description": "Display name (e.g. `보라매병원 입출고 열차`)"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "smoothing": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Display-time smoothing details. Included only in `LIVE` status (omitted when `mode` is `RAW`).",
+                            "properties": {
+                              "enabled": {
+                                "type": "boolean",
+                                "description": "Whether the request was made with `smooth=true`"
+                              },
+                              "applied": {
+                                "type": "boolean",
+                                "description": "Whether smoothing was actually applied, making the time differ from the original calibrated time"
+                              },
+                              "rawCalibratedTime": {
+                                "type": "number",
+                                "description": "Original calibrated time in seconds before smoothing, reflecting only the delay"
+                              },
+                              "offsetSeconds": {
+                                "type": "number",
+                                "description": "Seconds adjusted by smoothing (displayed time minus original calibrated time)"
+                              }
+                            }
+                          },
+                          "delaySeconds": {
+                            "type": "number",
+                            "description": "Delay in seconds (actual arrival/departure minus scheduled). Null when `mode` is `RAW` because there is no timetable",
+                            "nullable": true
+                          },
+                          "realtimeData": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Matched raw data received from the Seoul real-time subway API (values before calibration). Null when no real-time data is matched (ended, estimated, or scheduled status).",
+                            "properties": {
+                              "subwayId": {
+                                "type": "number",
+                                "description": "Line ID"
+                              },
+                              "trainNo": {
+                                "type": "string",
+                                "description": "Train number, normalized (e.g. leading zeros removed)"
+                              },
+                              "trainType": {
+                                "type": "string",
+                                "description": "Train type: `일반` (local) | `급행` (express) | `ITX`",
+                                "nullable": true
+                              },
+                              "direction": {
+                                "type": "string",
+                                "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)",
+                                "nullable": true
+                              },
+                              "destinationStationId": {
+                                "type": "number",
+                                "description": "Destination (terminal) station ID",
+                                "nullable": true
+                              },
+                              "destinationName": {
+                                "type": "string",
+                                "description": "Destination name announced by the source API",
+                                "nullable": true
+                              },
+                              "stationId": {
+                                "type": "number",
+                                "description": "ID of the station where this data was observed"
+                              },
+                              "status": {
+                                "type": "number",
+                                "description": "Seoul API arrival code (`arvlCd`). 2 = departed the previous station; 0, 1, 3, 4, 5 = imminent events such as entering or arriving; 99 = not yet tracked (placeholder while running)",
+                                "nullable": true
+                              },
+                              "arrivalEtaSeconds": {
+                                "type": "number",
+                                "description": "Estimated seconds remaining until arrival (`barvlDt`)",
+                                "nullable": true
+                              },
+                              "sourceReceivedAt": {
+                                "type": "string",
+                                "description": "Time the Seoul API updated this data (KST, \"YYYY-MM-DD HH:MM:SS\")",
+                                "nullable": true
+                              },
+                              "arrivalMsg1": {
+                                "type": "string",
+                                "description": "Arrival message (e.g. \"OO역 진입\")",
+                                "nullable": true
+                              },
+                              "arrivalMsg2": {
+                                "type": "string",
+                                "description": "Secondary arrival message (usually the station name)",
+                                "nullable": true
+                              },
+                              "isLast": {
+                                "type": "boolean",
+                                "description": "Whether this is the last train of the day"
+                              }
+                            },
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getRealTimeTrainPositionsByLine"
+      }
+    },
+    "/api/v1/train/{trainNo}": {
+      "get": {
+        "summary": "Get the status and history of a single train",
+        "tags": [
+          "Train"
+        ],
+        "description": "Retrieves real-time calibrated status, delay seconds, and operational mode for a specific train.\nProvides second-level calibration while running, terminal delay when ended, and scheduled departure before origin departure.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": true,
+            "description": "Line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Service date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "smooth",
+            "required": false,
+            "description": "Position smoothing"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "detail",
+            "required": false,
+            "description": "Include progress & nextAction"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "simple",
+            "required": false,
+            "description": "Simplify status into arrived/moving"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "trainNo",
+            "required": true,
+            "description": "Train number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "trainNo": {
+                      "type": "string",
+                      "description": "Train number. As written in the timetable (e.g. X0059) when matched to a timetable (`mode` is not `RAW`); otherwise (`RAW`), as written in the raw real-time data"
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "LIVE",
+                        "ENDED",
+                        "ESTIMATED",
+                        "SCHEDULED",
+                        "RAW"
+                      ],
+                      "description": "`LIVE`: current status calibrated with real-time data / `ENDED`: considered out of service because real-time data stopped updating for the grace period after arrival at the terminal station / `ESTIMATED`: the train should be running per the timetable but there is no real-time data, so its position is estimated from the timetable alone / `SCHEDULED`: has not yet departed its origin station / `RAW`: the line has no timetable (privately operated lines such as the Ui-Sinseol Line, GTX-A, Shinbundang Line, and Sillim Line), so only the raw real-time position is provided, without delay calibration"
+                    },
+                    "dataSource": {
+                      "type": "string",
+                      "description": "COLLECTED | TIMETABLE | LAST_OBSERVED (historical observation, not a confirmed termination)"
+                    },
+                    "sourceTimeQuality": {
+                      "type": "string",
+                      "description": "valid | missing | invalid | future_corrected; null for legacy observations",
+                      "nullable": true
+                    },
+                    "lastObservedAt": {
+                      "type": "string",
+                      "description": "Last observation timestamp in KST, for RAW historical records",
+                      "nullable": true
+                    },
+                    "destinationHistory": {
+                      "type": "array",
+                      "description": "Confirmed stable destination announcements for a RAW run; not actual termination records",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "destinationStationId": {
+                            "type": "number"
+                          },
+                          "destination": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "observedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "trainStatus": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Meaning of the `status` values: `접근` (approaching): about to arrive at a station / `도착` (arrived): stopped at a station / `출발` (departed): has just left a station / `운행중` (running): moving between stations / `운행종료` (ended): considered out of service once the grace period after arriving at the terminal station has passed (train API only) / `운행예정` (scheduled): has not yet departed its origin station (train API only). The fields included differ by status, so fields without a value may be omitted or null. When `mode` is `RAW` (lines without a timetable), `접근`/`도착`/`출발`/`운행중` are roughly inferred from the real-time API's `arvlCd` alone; only `currentStation`, `currentStaId`, `remainingSeconds`, and `textKorean` are populated, and timetable-based fields (`scheduled*`, `progress`, `nextAction`, etc.) are not included.",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "description": "Train status: `접근` (approaching) | `도착` (arrived) | `출발` (departed) | `운행중` (running) | `운행종료` (ended) | `운행예정` (scheduled)"
+                        },
+                        "currentStation": {
+                          "type": "string",
+                          "description": "Current station name (`접근`, `도착`, `출발`, and `운행종료` statuses)",
+                          "nullable": true
+                        },
+                        "currentStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "nextStation": {
+                          "type": "string",
+                          "description": "Next station name (`출발` and `운행중` statuses)",
+                          "nullable": true
+                        },
+                        "nextStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "previousStation": {
+                          "type": "string",
+                          "description": "Name of the station the train last departed (`운행중` status)",
+                          "nullable": true
+                        },
+                        "previousStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "departureStation": {
+                          "type": "string",
+                          "description": "Origin station name (`운행예정` status only)",
+                          "nullable": true
+                        },
+                        "departureStaId": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "scheduledArriveTime": {
+                          "type": "string",
+                          "description": "Scheduled arrival time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledDepartureTime": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the timetable",
+                          "nullable": true
+                        },
+                        "scheduledPreviousDeparture": {
+                          "type": "string",
+                          "description": "Scheduled departure time from the previous station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "scheduledNextArrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time at the next station (`운행중` status)",
+                          "nullable": true
+                        },
+                        "arriveTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time, including delay",
+                          "nullable": true
+                        },
+                        "departureTime": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time, including delay",
+                          "nullable": true
+                        },
+                        "previousDeparture": {
+                          "type": "string",
+                          "description": "Actual (estimated) departure time from the previous station, including delay",
+                          "nullable": true
+                        },
+                        "nextArrive": {
+                          "type": "string",
+                          "description": "Actual (estimated) arrival time at the next station, including delay",
+                          "nullable": true
+                        },
+                        "remainingSeconds": {
+                          "type": "number",
+                          "description": "`운행예정` status: seconds until departure. `RAW` mode: seconds until arrival at the current station as reported by the real-time API (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "delaySeconds": {
+                          "type": "number",
+                          "description": "Delay in seconds (actual minus scheduled; negative means ahead of schedule). Null in `운행예정` status because it is not yet known",
+                          "nullable": true
+                        },
+                        "calibratedTime": {
+                          "type": "number",
+                          "description": "Calibrated current time (seconds since midnight)"
+                        },
+                        "textKorean": {
+                          "type": "string",
+                          "description": "Human-readable summary sentence in Korean"
+                        },
+                        "progress": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. Progress through the current phase (e.g. from `접근` to `운행중`)",
+                          "properties": {
+                            "current": {
+                              "type": "number",
+                              "description": "Elapsed seconds"
+                            },
+                            "total": {
+                              "type": "number",
+                              "description": "Total length of the phase in seconds"
+                            },
+                            "percent": {
+                              "type": "number",
+                              "description": "Progress (%)"
+                            }
+                          }
+                        },
+                        "nextAction": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Included only in detail requests. The upcoming status transition (null if there are no further transitions)",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "description": "The `status` value the train will change to next"
+                            },
+                            "station": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "stationId": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "remainingSeconds": {
+                              "type": "number",
+                              "description": "Seconds until the transition"
+                            }
+                          },
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "trainInfo": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Train information. Destination prefers a confirmed stable API announcement, otherwise the timetable; a destination announcement does not prove where the train actually terminated. Train type comes from realtime data; direction and express may come from the timetable.",
+                      "properties": {
+                        "destination": {
+                          "type": "string",
+                          "description": "Destination (terminal station name)",
+                          "nullable": true
+                        },
+                        "destinationPending": {
+                          "type": "boolean",
+                          "description": "An API destination exists but is not confirmed for display; keep the timetable or previous confirmed value"
+                        },
+                        "destinationChange": {
+                          "type": "object",
+                          "description": "Confirmed destination announcement change; not proof of actual termination",
+                          "properties": {
+                            "destinationStationId": {
+                              "type": "number"
+                            },
+                            "destination": {
+                              "type": "string"
+                            },
+                            "previousDestination": {
+                              "type": "string"
+                            },
+                            "observedAt": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle). Null if not in the timetable",
+                          "nullable": true
+                        },
+                        "express": {
+                          "type": "boolean",
+                          "description": "Whether the train is an express (null if not in the timetable)",
+                          "nullable": true
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`. Included only when confirmed by real-time data; when unknown, the field is omitted rather than guessed."
+                        },
+                        "specialService": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "DEPOT_RUN: depot service; UNVERIFIED_RUN: 9xxx number observed, temporary or diverted operation unconfirmed; UNSCHEDULED_RERUN: rerun without a matching timetable.",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "description": "DEPOT_RUN | UNVERIFIED_RUN | UNSCHEDULED_RERUN"
+                            },
+                            "label": {
+                              "type": "string",
+                              "description": "Display name (e.g. `보라매병원 입출고 열차`)"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "smoothing": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Display-time smoothing details. Included only in `LIVE` status (omitted when `mode` is not `LIVE`).",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Whether the request was made with `smooth=true`"
+                        },
+                        "applied": {
+                          "type": "boolean",
+                          "description": "Whether smoothing was actually applied, making the time differ from the original calibrated time"
+                        },
+                        "rawCalibratedTime": {
+                          "type": "number",
+                          "description": "Original calibrated time in seconds before smoothing, reflecting only the delay"
+                        },
+                        "offsetSeconds": {
+                          "type": "number",
+                          "description": "Seconds adjusted by smoothing (displayed time minus original calibrated time)"
+                        }
+                      }
+                    },
+                    "realtimeData": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Matched raw data received from the Seoul real-time subway API (values before calibration). Null when no real-time data is matched (ended, estimated, or scheduled status).",
+                      "properties": {
+                        "subwayId": {
+                          "type": "number",
+                          "description": "Line ID"
+                        },
+                        "trainNo": {
+                          "type": "string",
+                          "description": "Train number, normalized (e.g. leading zeros removed)"
+                        },
+                        "trainType": {
+                          "type": "string",
+                          "description": "Train type: `일반` (local) | `급행` (express) | `ITX`",
+                          "nullable": true
+                        },
+                        "direction": {
+                          "type": "string",
+                          "description": "Direction: `상행` (up) | `하행` (down) | `내선` (inner circle) | `외선` (outer circle)",
+                          "nullable": true
+                        },
+                        "destinationStationId": {
+                          "type": "number",
+                          "description": "Destination (terminal) station ID",
+                          "nullable": true
+                        },
+                        "destinationName": {
+                          "type": "string",
+                          "description": "Destination name announced by the source API",
+                          "nullable": true
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "ID of the station where this data was observed"
+                        },
+                        "status": {
+                          "type": "number",
+                          "description": "Seoul API arrival code (`arvlCd`). 2 = departed the previous station; 0, 1, 3, 4, 5 = imminent events such as entering or arriving; 99 = not yet tracked (placeholder while running)",
+                          "nullable": true
+                        },
+                        "arrivalEtaSeconds": {
+                          "type": "number",
+                          "description": "Estimated seconds remaining until arrival (`barvlDt`)",
+                          "nullable": true
+                        },
+                        "sourceReceivedAt": {
+                          "type": "string",
+                          "description": "Time the Seoul API updated this data (KST, \"YYYY-MM-DD HH:MM:SS\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg1": {
+                          "type": "string",
+                          "description": "Arrival message (e.g. \"OO역 진입\")",
+                          "nullable": true
+                        },
+                        "arrivalMsg2": {
+                          "type": "string",
+                          "description": "Secondary arrival message (usually the station name)",
+                          "nullable": true
+                        },
+                        "isLast": {
+                          "type": "boolean",
+                          "description": "Whether this is the last train of the day"
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "realtimeMatchedTimetable": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Timetable stop matched to the real-time (or last observed) data. Null when there is no real-time data to match (estimated status).",
+                      "properties": {
+                        "station": {
+                          "type": "string",
+                          "description": "Station name"
+                        },
+                        "stationId": {
+                          "type": "number",
+                          "description": "Station ID (populated only when the line is known)",
+                          "nullable": true
+                        },
+                        "arrive": {
+                          "type": "string",
+                          "description": "Scheduled arrival time (HH:MM:SS). Null at the origin station",
+                          "nullable": true
+                        },
+                        "departure": {
+                          "type": "string",
+                          "description": "Scheduled departure time (HH:MM:SS). Null at the terminal station",
+                          "nullable": true
+                        },
+                        "stopTime": {
+                          "type": "string",
+                          "description": "Dwell time",
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "delaySeconds": {
+                      "type": "number",
+                      "description": "Delay in seconds. Null in `SCHEDULED` status because it is not yet known",
+                      "nullable": true
+                    },
+                    "nowTime": {
+                      "type": "string",
+                      "description": "Time the response was generated (KST, human-readable format)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getStatusAndHistoryOfSingleTrain"
+      }
+    },
+    "/api/v1/train/{trainNo}/timetable": {
+      "get": {
+        "summary": "Get full train timetable",
+        "tags": [
+          "Train"
+        ],
+        "description": "Returns the full route stations with scheduled arrival/departure times, plus actual detected timestamps for today.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": true,
+            "description": "Line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "description": "Service date"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "trainNo",
+            "required": true,
+            "description": "Train number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "trainNo": {
+                      "type": "string",
+                      "description": "Train number"
+                    },
+                    "stations": {
+                      "type": "array",
+                      "description": "All stops on the route, in timetable order",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "station": {
+                            "type": "string",
+                            "description": "Station name"
+                          },
+                          "stationId": {
+                            "type": "number",
+                            "description": "Station ID (populated only when the line is known)",
+                            "nullable": true
+                          },
+                          "arrive": {
+                            "type": "string",
+                            "description": "Scheduled arrival time (HH:MM:SS). Null at the origin station",
+                            "nullable": true
+                          },
+                          "departure": {
+                            "type": "string",
+                            "description": "Scheduled departure time (HH:MM:SS). Null at the terminal station",
+                            "nullable": true
+                          },
+                          "detectedAt": {
+                            "type": "string",
+                            "description": "Most recent real-time detection time at this station today (KST, \"YYYY-MM-DD HH:MM:SS\"). Null if no data has been collected",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getFullTrainTimetable"
+      }
+    },
+    "/api/v1/line-map/{lineId}": {
+      "get": {
+        "summary": "Get schematic line sections",
+        "tags": [
+          "Train"
+        ],
+        "description": "Returns known station connections and schematic display sections. Sections are not individual train itineraries.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,10}$"
+            },
+            "in": "path",
+            "name": "lineId",
+            "required": true,
+            "description": "Subway line ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getSchematicLineSections"
+      }
+    },
+    "/api/v1/data-status/": {
+      "get": {
+        "summary": "Get data coverage and operational status by line",
+        "tags": [
+          "Status"
+        ],
+        "description": "Retrieves data coverage metrics, timetable counts, and real-time train tracking availability for all subway lines.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getDataCoverageAndOperationalStatusByLine"
+      }
+    },
+    "/api/v1/data-status/{lineId}": {
+      "get": {
+        "summary": "Get detailed data for a line",
+        "tags": [
+          "Status"
+        ],
+        "description": "Retrieves detailed line-specific data for timetables, distances, stations, or real-time arrivals.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "timetable",
+                "distance",
+                "stations",
+                "realtime"
+              ]
+            },
+            "in": "query",
+            "name": "metric",
+            "required": true,
+            "description": "Metric type to view"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "weekday",
+                "saturday",
+                "holiday"
+              ],
+              "default": "all"
+            },
+            "in": "query",
+            "name": "dayType",
+            "required": false,
+            "description": "Day type"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "morning_peak",
+                "daytime",
+                "evening_peak",
+                "night"
+              ],
+              "default": "all"
+            },
+            "in": "query",
+            "name": "timeSlot",
+            "required": false,
+            "description": "Time slot"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,10}$"
+            },
+            "in": "path",
+            "name": "lineId",
+            "required": true,
+            "description": "Subway line ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        },
+        "operationId": "getDetailedDataForLine"
+      }
+    },
+    "/api/v1/analytics/segment-travel-stats": {
+      "get": {
+        "summary": "Get segment travel time statistics",
+        "tags": [
+          "Analytics"
+        ],
+        "description": "Retrieves empirical segment travel time statistics aggregated from historical real-time arrivals and timetables.\nProvides median, 85th percentile (p85), and sample counts grouped by day type and time slot.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": false,
+            "description": "Line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationAId",
+            "required": false,
+            "description": "Station A ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationBId",
+            "required": false,
+            "description": "Station B ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "weekday",
+                "saturday",
+                "holiday",
+                "all"
+              ]
+            },
+            "in": "query",
+            "name": "dayType",
+            "required": false,
+            "description": "Day type"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "morning_peak",
+                "evening_peak",
+                "daytime",
+                "night",
+                "all"
+              ]
+            },
+            "in": "query",
+            "name": "timeSlot",
+            "required": false,
+            "description": "Time slot"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,5}$"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Result limit"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "stats": {
+                      "type": "array",
+                      "description": "Segment travel statistics list",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Subway line ID"
+                          },
+                          "subwayName": {
+                            "type": "string",
+                            "description": "Line name"
+                          },
+                          "stationAId": {
+                            "type": "number",
+                            "description": "Station A ID"
+                          },
+                          "stationAName": {
+                            "type": "string",
+                            "description": "Station A name"
+                          },
+                          "stationBId": {
+                            "type": "number",
+                            "description": "Station B ID"
+                          },
+                          "stationBName": {
+                            "type": "string",
+                            "description": "Station B name"
+                          },
+                          "distanceMeters": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Distance in meters"
+                          },
+                          "officialTravelTimeSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Baseline travel seconds"
+                          },
+                          "dayType": {
+                            "type": "string",
+                            "description": "Day type"
+                          },
+                          "timeSlot": {
+                            "type": "string",
+                            "description": "Time slot"
+                          },
+                          "sampleCount": {
+                            "type": "number",
+                            "description": "Sample count"
+                          },
+                          "scheduledSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Scheduled seconds"
+                          },
+                          "medianSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Empirical median travel seconds"
+                          },
+                          "p85Seconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Empirical 85th percentile travel seconds"
+                          },
+                          "minSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Min travel seconds"
+                          },
+                          "maxSeconds": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Max travel seconds"
+                          },
+                          "windowStartedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Observation window start (inclusive)"
+                          },
+                          "windowEndedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Observation window end (exclusive)"
+                          },
+                          "lastSampleAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Latest empirical sample timestamp"
+                          },
+                          "calculatedAt": {
+                            "type": "string",
+                            "description": "Calculated timestamp"
+                          }
+                        }
+                      }
+                    },
+                    "totalCount": {
+                      "type": "number",
+                      "description": "Total count"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getSegmentTravelTimeStatistics"
+      }
+    },
+    "/api/v1/account/rapidapi-link": {
+      "post": {
+        "summary": "Link your RapidAPI account to the RailNow developer center",
+        "tags": [
+          "Account"
+        ],
+        "description": "Send the link code from the RailNow developer center to view this RapidAPI account's usage and request logs there. Only requests made through RapidAPI are accepted. Codes expire after 10 minutes and can be used once.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "description": "Link code from the developer center (e.g. ABCDE-23456)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rapidapiUser": {
+                      "type": "string",
+                      "description": "Linked RapidAPI username"
+                    },
+                    "linkedEmail": {
+                      "type": "string",
+                      "description": "Linked developer center account (masked)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "linkYourRapidapiAccountToRailnowDeveloperCenter"
+      }
+    }
+  },
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Station",
+      "description": "Stations, search, transfers & distance metrics"
+    },
+    {
+      "name": "Train",
+      "description": "Real-time train tracking & timetables"
+    },
+    {
+      "name": "Analytics",
+      "description": "Segment travel time statistics & delay analytics"
+    },
+    {
+      "name": "Timetable",
+      "description": "Scheduled timetable search & historical versions"
+    },
+    {
+      "name": "Status",
+      "description": "Data coverage & real-time collection status"
+    },
+    {
+      "name": "Realtime",
+      "description": "Raw real-time arrival feeds"
+    },
+    {
+      "name": "Calibration",
+      "description": "Deprecated calibration endpoints"
+    },
+    {
+      "name": "Account",
+      "description": "Link your RapidAPI account to the RailNow developer center"
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://railnow.runvia.app",
+      "description": "RailNow production"
+    }
+  ]
+}

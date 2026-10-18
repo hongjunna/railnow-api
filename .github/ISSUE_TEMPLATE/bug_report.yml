@@ -1,0 +1,38 @@
+name: Bug report / 버그 제보
+description: Wrong data, errors or unexpected responses. 잘못된 데이터, 오류, 예상과 다른 응답.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste your API key.** 이슈에 API 키를 붙여 넣지 마세요.
+  - type: input
+    id: endpoint
+    attributes:
+      label: Request / 요청
+      description: Method, path and query parameters, without the API key.
+      placeholder: GET /api/v1/train/K802?lineId=1001&lang=en
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: When (KST) / 발생 시각 (한국 시간)
+      placeholder: 2026-10-18 08:15
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened / 실제 결과
+      description: Status code and the relevant part of the response.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected / 기대한 결과
+      description: For wrong train positions, describe what you saw on the platform or in the official app.
+    validations:
+      required: true
