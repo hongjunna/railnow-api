@@ -3,7 +3,7 @@
   "info": {
     "title": "RailNow API — South Korea Real-Time Subway & Railway Data",
     "description": "**🔑 [Get your free API key (Developer Center) →](https://railnow.runvia.app/developer?lang=en)** · [Korean docs](https://railnow.runvia.app/api/docs)\n\nRailNow provides developer-friendly access to South Korea's subway and railway data, including real-time train locations, station information, route distances, travel times, and operational statistics.\n\nDesigned to make Korean railway data accessible to developers worldwide, without requiring Korean phone number verification.\n\n#### Authentication\n- Every request needs an API key in the `X-API-Key` header. Sign in with Google at the [developer center](https://railnow.runvia.app/developer?lang=en) to get a free key (`jl_...`), then click **Authorize** to try requests here.\n- Each key can make up to 500 requests per hour and 5,000 requests per day. Both windows start from the time the key was issued and reset every hour and every 24 hours from that time; requests over a limit return 429 with a `Retry-After` header.\n- Also available on RapidAPI.\n\n#### Attribution\n- **Every service that uses RailNow data must credit us as the data provider by showing our logo on screens that display the data.**\n- We recommend the \"Provided by\" logo. Pick the one that fits your background and, where possible, link it to https://railnow.runvia.app. Do not stretch, recolor or alter the logos.\n\n![Provided by RailNow](https://railnow.runvia.app/brand/railnow-provided-by-universal.svg)\n\n| Background | \"Provided by\" logo | RailNow logo |\n|---|---|---|\n| Light | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-light.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-light.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-light.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-light.png) |\n| Dark | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-dark.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-dark.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-dark.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-dark.png) |\n| Any | [SVG](https://railnow.runvia.app/brand/railnow-provided-by-universal.svg) · [PNG](https://railnow.runvia.app/brand/railnow-provided-by-universal.png) | [SVG](https://railnow.runvia.app/brand/railnow-logo-universal.svg) · [PNG](https://railnow.runvia.app/brand/railnow-logo-universal.png) |\n\nSquare icon: [SVG](https://railnow.runvia.app/brand/railnow-icon.svg) · [PNG 512×512](https://railnow.runvia.app/brand/railnow-icon.png). Previews and HTML snippets are in the [developer center](https://railnow.runvia.app/developer?lang=en).\n\n#### Response language\nAdd `lang=en` to any request to get station names, line names, train statuses, directions, messages, and other data values in English (e.g. `Arrived` instead of `도착`, `Up` instead of `상행`). Without it (or with `lang=ko`), values are returned in Korean as provided by the source data.",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "components": {
     "schemas": {},
@@ -4035,6 +4035,194 @@
         },
         "operationId": "linkYourRapidapiAccountToRailnowDeveloperCenter"
       }
+    },
+    "/api/v1/service-exceptions/": {
+      "get": {
+        "summary": "List service exceptions (station closures, skip-stops)",
+        "tags": [
+          "ServiceException"
+        ],
+        "description": "Lists periods when service differs from the timetable, such as temporary station closures or skip-stops. During `station_closed`/`pass_through`, train, station and line APIs drop the affected stops and treat the nearest remaining stop as origin/terminus. `notice` is informational only. Defaults to records in effect now (`status=active`).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "lineId",
+            "required": false,
+            "description": "Line ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$"
+            },
+            "in": "query",
+            "name": "stationId",
+            "required": false,
+            "description": "Station ID"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "upcoming",
+                "ended",
+                "cancelled",
+                "all"
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "description": "Status filter"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,5}$"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Result limit"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "en"
+              ],
+              "default": "en"
+            },
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "description": "Response language. Pre-filled with `en` here so station names, line names, train statuses, directions, messages and errors come back in English. If you omit it, the server responds in Korean (`ko`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exceptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "number",
+                            "description": "Record ID"
+                          },
+                          "subwayId": {
+                            "type": "number",
+                            "description": "Line ID"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "station_closed",
+                              "pass_through",
+                              "notice"
+                            ],
+                            "description": "Kind"
+                          },
+                          "stationIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "description": "Affected station IDs"
+                          },
+                          "stationNames": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Affected station names"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "description": "Start time"
+                          },
+                          "endsAt": {
+                            "type": "string",
+                            "description": "End time (null if open-ended)",
+                            "nullable": true
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Title"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Details",
+                            "nullable": true
+                          },
+                          "sourceUrl": {
+                            "type": "string",
+                            "description": "Source URL",
+                            "nullable": true
+                          },
+                          "cancelledAt": {
+                            "type": "string",
+                            "description": "Withdrawn at",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Created at"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Updated at"
+                          }
+                        }
+                      }
+                    },
+                    "totalCount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the cause (in Korean)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listServiceExceptionsStationClosuresSkipStops"
+      }
     }
   },
   "security": [
@@ -4054,6 +4242,10 @@
     {
       "name": "Analytics",
       "description": "Segment travel time statistics & delay analytics"
+    },
+    {
+      "name": "ServiceException",
+      "description": "Station closures, skip-stops & other service exceptions"
     },
     {
       "name": "Timetable",
